@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0B0E0C">
+<title>LEAP ONE — Mission Aid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#0B0E0C;
+  --panel:#121815;
+  --panel-2:#171F1B;
+  --rule:#25332C;
+  --phos:#5BF08F;
+  --phos-dim:#1E5C3A;
+  --amber:#F0A93B;
+  --bone:#E4EBE6;
+  --muted:#75897E;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --body:'Space Grotesk',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{
+  background:var(--void);color:var(--bone);font-family:var(--body);
+  overflow:hidden;
+  background-image:radial-gradient(120% 80% at 50% -10%, #14201A 0%, #0B0E0C 60%);
+}
+#app{
+  height:100dvh;display:flex;flex-direction:column;
+  max-width:560px;margin:0 auto;
+  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+}
+
+/* ── status rail ─────────────────────────────── */
+.rail{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px 9px;border-bottom:1px solid var(--rule);
+  font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  flex:0 0 auto;
+}
+.lamp{width:7px;height:7px;border-radius:50%;background:var(--phos);box-shadow:0 0 8px var(--phos);flex:0 0 auto}
+.lamp.warn{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+.lamp.off{background:#26332C;box-shadow:none}
+.rail .id{color:var(--phos);font-weight:600}
+.rail .sep{color:var(--rule)}
+.rail .clock{margin-left:auto;color:var(--muted);text-align:right;line-height:1.35}
+.rail .clock b{display:block;color:var(--amber);font-weight:500;letter-spacing:.1em}
+
+/* ── console / face ──────────────────────────── */
+.console{
+  flex:0 0 auto;padding:16px 14px 12px;
+}
+.glass{
+  position:relative;border-radius:18px;overflow:hidden;
+  background:linear-gradient(#0A100C,#060907);
+  border:1px solid var(--rule);
+  box-shadow:inset 0 0 60px rgba(0,0,0,.9), 0 10px 30px rgba(0,0,0,.5);
+  aspect-ratio:16/9;
+}
+#face{display:block;width:100%;height:100%}
+.glass::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0 2px, rgba(0,0,0,.28) 2px 3px),
+    radial-gradient(130% 100% at 50% 50%, rgba(0,0,0,0) 45%, rgba(0,0,0,.75) 100%);
+}
+.bezel{
+  display:flex;align-items:center;gap:8px;margin-top:9px;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted);
+}
+.bezel .state{color:var(--phos)}
+.bezel .right{margin-left:auto;display:flex;gap:5px;align-items:center}
+.tick{width:3px;height:9px;background:var(--rule);border-radius:1px}
+.tick.on{background:var(--phos);box-shadow:0 0 6px var(--phos)}
+
+/* ── log ─────────────────────────────────────── */
+.log{
+  flex:1 1 auto;overflow-y:auto;padding:4px 14px 12px;
+  -webkit-overflow-scrolling:touch;
+}
+.log::-webkit-scrollbar{width:0}
+.turn{margin:14px 0;animation:rise .28s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.tag{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:5px;display:flex;align-items:center;gap:6px;
+}
+.tag i{width:14px;height:1px;background:var(--rule);flex:1 1 auto;font-style:normal}
+.turn.me .tag{color:var(--amber)}
+.turn.me .body{color:var(--bone);opacity:.86}
+.body{font-size:15.5px;line-height:1.55;white-space:pre-wrap;word-wrap:break-word}
+.turn.ai .body{color:var(--bone)}
+.turn.ai .body strong{color:var(--phos);font-weight:600}
+.turn.sys .body{
+  font-family:var(--mono);font-size:11.5px;line-height:1.5;
+  color:var(--amber);border-left:2px solid var(--amber);padding-left:9px;
+}
+.shot{
+  width:74px;height:74px;object-fit:cover;border-radius:8px;
+  border:1px solid var(--rule);margin-bottom:8px;display:block;
+}
+.dots span{
+  display:inline-block;width:5px;height:5px;margin-right:4px;border-radius:50%;
+  background:var(--phos);animation:bl 1.05s infinite ease-in-out;
+}
+.dots span:nth-child(2){animation-delay:.16s}
+.dots span:nth-child(3){animation-delay:.32s}
+@keyframes bl{0%,70%,100%{opacity:.18}35%{opacity:1}}
+
+/* ── chips ───────────────────────────────────── */
+.chips{
+  flex:0 0 auto;display:flex;gap:7px;overflow-x:auto;
+  padding:0 14px 10px;scrollbar-width:none;
+}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  flex:0 0 auto;font-family:var(--mono);font-size:11px;letter-spacing:.04em;
+  padding:8px 12px;border-radius:99px;border:1px solid var(--rule);
+  background:var(--panel);color:var(--muted);cursor:pointer;white-space:nowrap;
+}
+.chip:active{background:var(--panel-2);color:var(--phos);border-color:var(--phos-dim)}
+
+/* ── dock ────────────────────────────────────── */
+.dock{
+  flex:0 0 auto;border-top:1px solid var(--rule);background:var(--panel);
+  padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+  display:flex;align-items:center;gap:11px;
+}
+.key{
+  width:46px;height:46px;flex:0 0 auto;border-radius:12px;
+  border:1px solid var(--rule);background:var(--panel-2);color:var(--muted);
+  display:grid;place-items:center;cursor:pointer;transition:.15s;
+}
+.key:active{border-color:var(--phos-dim);color:var(--phos)}
+.key svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6;
+  stroke-linecap:round;stroke-linejoin:round}
+.key.armed{color:var(--amber);border-color:var(--amber)}
+.talk{
+  flex:1 1 auto;height:46px;border-radius:12px;cursor:pointer;
+  border:1px solid var(--phos-dim);background:linear-gradient(#16241C,#101A15);
+  color:var(--phos);font-family:var(--mono);font-size:12px;letter-spacing:.16em;
+  text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:9px;
+  transition:.15s;
+}
+.talk:active{background:#1A2C21}
+.talk.live{
+  border-color:var(--amber);color:var(--amber);
+  background:linear-gradient(#2A2013,#1A150C);
+  animation:pulse 1.5s infinite;
+}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(240,169,59,.35)}50%{box-shadow:0 0 0 7px rgba(240,169,59,0)}}
+.talk .rec{width:8px;height:8px;border-radius:50%;background:currentColor}
+
+.field{display:none;flex:1 1 auto;gap:9px;align-items:center}
+.field.show{display:flex}
+.field input{
+  flex:1 1 auto;height:46px;border-radius:12px;padding:0 14px;
+  background:var(--panel-2);border:1px solid var(--rule);color:var(--bone);
+  font-family:var(--body);font-size:15px;outline:none;min-width:0;
+}
+.field input:focus{border-color:var(--phos-dim)}
+
+/* ── camera ──────────────────────────────────── */
+.cam{
+  position:fixed;inset:0;background:#000;z-index:50;display:none;
+  flex-direction:column;
+}
+.cam.show{display:flex}
+.cam video{flex:1 1 auto;width:100%;object-fit:cover;min-height:0}
+.cam .bar{
+  padding:18px 20px calc(26px + env(safe-area-inset-bottom));
+  display:flex;align-items:center;justify-content:space-between;background:#000;
+}
+.cam .bar span{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted);cursor:pointer;padding:8px}
+.shutter{
+  width:64px;height:64px;border-radius:50%;border:3px solid var(--phos);
+  background:transparent;cursor:pointer;
+}
+.shutter:active{background:rgba(91,240,143,.2)}
+.cam .hint{
+  position:absolute;top:calc(20px + env(safe-area-inset-top));left:0;right:0;
+  text-align:center;font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+  color:var(--phos);text-shadow:0 1px 6px #000;pointer-events:none;padding:0 24px;
+  line-height:1.6;
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;animation-iteration-count:1!important}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="rail">
+    <div class="lamp" id="lamp"></div>
+    <span class="id">LEAP&nbsp;ONE</span>
+    <span class="sep">/</span>
+    <span id="railMode" style="color:var(--muted)">Mission aid</span>
+    <div class="clock"><b id="clockA">—</b><span id="clockB">RECC Malham</span></div>
+  </div>
+
+  <div class="console">
+    <div class="glass"><canvas id="face"></canvas></div>
+    <div class="bezel">
+      <span>STATE</span><span class="state" id="stateTxt">IDLE</span>
+      <div class="right" id="ticks"></div>
+    </div>
+  </div>
+
+  <div class="log" id="log"></div>
+
+  <div class="chips" id="chips"></div>
+
+  <div class="dock">
+    <button class="key" id="camBtn" aria-label="Use camera">
+      <svg viewBox="0 0 24 24"><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.7l1.2-1.8h6.2L15.8 6h2.7A2.5 2.5 0 0 1 21 8.5v9A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z"/><circle cx="12" cy="13" r="3.4"/></svg>
+    </button>
+    <button class="talk" id="talkBtn"><span class="rec"></span><span id="talkTxt">Hold the mic</span></button>
+    <div class="field" id="field">
+      <input id="input" placeholder="Type your question" enterkeyhint="send">
+      <button class="key" id="sendBtn" aria-label="Send">
+        <svg viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+    <button class="key" id="kbdBtn" aria-label="Type instead">
+      <svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M8 14h8"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="cam" id="cam">
+  <div class="hint" id="camHint">Point at a hall sign, booth banner or session board</div>
+  <video id="video" playsinline muted autoplay></video>
+  <div class="bar">
+    <span id="camCancel">Cancel</span>
+    <button class="shutter" id="shutter" aria-label="Capture"></button>
+    <span id="camFlip">Flip</span>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   1. KNOWLEDGE BASE — sourced from onegiantleap.com, Aug 2026
+   ═══════════════════════════════════════════════════════════ */
+const KB = {
+  event:{
+    name:"LEAP 2026", edition:"5th", theme:"Into New Worlds",
+    dates:"31 August – 3 September 2026",
+    days:{ "1":"Mon 31 Aug 2026", "2":"Tue 1 Sep 2026", "3":"Wed 2 Sep 2026", "4":"Thu 3 Sep 2026" },
+    venue:"Riyadh Exhibition & Convention Centre, Malham (RECC Malham), Riyadh, Saudi Arabia",
+    organiser:"Tahaluf (backed by Informa PLC, SAFCSP and the Events Investment Fund)",
+    coCreators:"Mike Champion and Annabelle Mander",
+    foundingPartners:["Ministry of Communications and Information Technology (MCIT)","SAFCSP","Tahaluf"],
+    scale:"1,800+ global tech brands, 1,000+ speakers, 600+ startups, 1,900+ investors. 201,000+ attended in 2025.",
+    coLocated:"DeepFest — LEAP's dedicated AI programme, 4th edition, co-located inside the venue (Hall 5).",
+    firstHeld:"2022. Attendance: 100k (2022), 172k (2023), 215k (2024), 201k (2025)."
+  },
+  hours:{
+    visitors:"1:00 PM – 9:00 PM daily",
+    earlyAccess:"12:00 PM for selected pass holders (Priority, VIP, Founder, Investor)",
+    exhibitors:"9:00 AM – 9:30 PM daily",
+    note:"All times are KSA / Arabia Standard Time (UTC+3)."
+  },
+  // Stage → Hall. This is the core wayfinding table.
+  halls:{
+    "Hall 1":["Main Stage"],
+    "Hall 1A":["Code Stage","Investor & Founder Stage","Rocket Fuel Pitch Stage"],
+    "Hall 2":["Orbital 2","LEAP Studio"],
+    "Hall 3":["Orbital 3","Orbital 4","World Tech Stage"],
+    "Hall 4":["Orbital 1","AI LEADERS","LEAP Connect","Locker Room","Sports Tech Stage"],
+    "Hall 5":["DeepFest Stage","Tech Arena","AWS Academy"],
+    "Booths":["Google Cloud Booth Amphitheatre","PwC Booth Theatre"]
+  },
+  stageIndex:{
+    "Main Stage":"Hall 1","Code Stage":"Hall 1A","Investor & Founder Stage":"Hall 1A",
+    "Rocket Fuel Stage":"Hall 1A","Orbital 2":"Hall 2","LEAP Studio":"Hall 2",
+    "Orbital 3":"Hall 3","Orbital 4":"Hall 3","World Tech Stage":"Hall 3",
+    "Orbital 1":"Hall 4","AI LEADERS":"Hall 4","LEAP Connect":"Hall 4",
+    "Locker Room":"Hall 4","Sports Tech Stage":"Hall 4 (a few listings also show Hall 6 — check the board on the day)",
+    "DeepFest":"Hall 5","Tech Arena":"Hall 5","AWS Academy":"Hall 5"
+  },
+  // Which industry track sits on which Orbital stage, per day.
+  tracksByDay:{
+    "Day 1 (31 Aug)":{ "Orbital 1 / Hall 4":"Climate Tech", "Orbital 2 / Hall 2":"Space Tech",
+      "Orbital 3 / Hall 3":"Smart Cities", "Orbital 4 / Hall 3":"GameX Creative" },
+    "Day 2 (1 Sep)":{ "Orbital 1 / Hall 4":"Health Tech", "Orbital 2 / Hall 2":"Space Tech",
+      "Orbital 3 / Hall 3":"Smart Cities", "Orbital 4 / Hall 3":"GameX Creative" },
+    "Day 3 (2 Sep)":{ "Orbital 1 / Hall 4":"Future of Work", "Orbital 2 / Hall 2":"Cloud & SaaS",
+      "Orbital 3 / Hall 3":"Future of Transportation", "Orbital 4 / Hall 3":"GameX Creative" },
+    "Day 4 (3 Sep)":"Remaining tracks (Cyber, Fintech & eCommerce, Gov Tech) rotate onto the Orbital stages — confirm via web search or the official agenda."
+  },
+  fixedStages:"Main Stage, DeepFest, Tech Arena, Code Stage, Investor & Founder Stage, Rocket Fuel, World Tech, Sports Tech, AI LEADERS, LEAP Studio, Locker Room and LEAP Connect run in the same hall all four days.",
+  highlights:{
+    "Day 1 — Mon 31 Aug":[
+      "12:00–13:10 Welcome & Opening Ceremony — Main Stage, Hall 1",
+      "13:10 Opening Address, H.E. Abdullah Alswaha (MCIT Minister) — Main Stage, Hall 1",
+      "13:20–14:20 Special Announcements: HUMAIN, Tareq Amin — Main Stage, Hall 1",
+      "13:30–15:55 Rocket Fuel Startup Pitches Round 1 — Rocket Fuel Stage, Hall 1A",
+      "14:20 Dr. Lisa Su (AMD) with H.E. Abdullah Alswaha, 'Building the AI Era' — Main Stage, Hall 1",
+      "14:20 Michio Kaku, 'The Double-Edged Sword' — DeepFest, Hall 5",
+      "16:00 Book signing with Michio Kaku — Locker Room, Hall 4",
+      "16:35 Qasar Younis (Applied Intuition), 'The Era of Physical AI' — Main Stage, Hall 1",
+      "17:00 Meet & greet with Patrice Evra — Locker Room, Hall 4",
+      "17:50 Esports as the Next Mass-Media Industry — Main Stage, Hall 1"
+    ],
+    "Day 2 — Tue 1 Sep":[
+      "13:00 Opening Remarks, H.E. Ahmed Alsuwaiyan (Digital Government Authority) — Main Stage, Hall 1",
+      "13:10–14:10 Special Announcements — Main Stage, Hall 1",
+      "14:55 HRH Princess Lamia bint Majid Al Saud, 'AI for Good' — Main Stage, Hall 1",
+      "15:00 Meet & greet with Chunkz — Locker Room, Hall 4",
+      "15:50 The AI-First Nation (Microsoft KSA + HUMAIN) — Main Stage, Hall 1",
+      "16:30 Rayyanah Barnawi, astronaut, Saudi Space Agency — Orbital 2, Hall 2",
+      "18:35 Javier Tebas, President of La Liga — Main Stage, Hall 1",
+      "Rocket Fuel Rounds 3 & 4 all afternoon — Hall 1A"
+    ],
+    "Day 3 — Wed 2 Sep":[
+      "13:00 Opening Remarks, Dr. Sultan Hassan bin Saeed (MCIT) — Main Stage, Hall 1",
+      "13:40 Abir El Saghir on storytelling — Orbital 4, Hall 3",
+      "13:45 Aston Martin Aramco F1: data-driven sponsorship — Sports Tech Stage, Hall 4",
+      "14:05 What the Next Cloud Generation Must Deliver (Databricks, Zoho, Cisco) — Main Stage, Hall 1",
+      "Rocket Fuel Round 5 from 13:30 — Hall 1A"
+    ],
+    "Day 4 — Thu 3 Sep":["Closing day. Full session list is on the official agenda — use web search for the live schedule."]
+  },
+  headlineSpeakers:[
+    "H.E. Abdullah Alswaha — Minister of Communications & IT, Saudi Arabia",
+    "Dr. Lisa Su — Chair & CEO, AMD",
+    "Chuck Robbins — Chair & CEO, Cisco",
+    "Tareq Amin — CEO, HUMAIN",
+    "Michio Kaku — theoretical physicist",
+    "Qasar Younis — Co-founder & CEO, Applied Intuition",
+    "JF Gauthier — CEO, Startup Genome",
+    "H.E. Abdulsalam Haykal — Minister of Communications & IT, Syria",
+    "H.E. Savannah Maziya — Minister of ICT, Eswatini",
+    "Mohit Joshi — CEO, Tech Mahindra",
+    "Jennifer Li — CFO, WeRide",
+    "Abir El Saghir — culinary content creator",
+    "Patrice Evra, Chunkz, Thierry Henry-calibre sports names appear at the Sports Hub and Locker Room"
+  ],
+  tracks:["Climate Tech","Cloud & SaaS","Cyber","Fintech & eCommerce","Future of Transportation","Future of Work","Gov Tech","Health Tech","Smart Cities","Space Tech","DeepFest (AI)","Code","GameX Creative","Sports Tech","World Tech","Investor & Founder","Rocket Fuel","AI LEADERS","Tech Arena","LEAP Studio"],
+  experiences:["Ecosystem Xchange","LEAP Nights","GameX Creative","LEAP Studios","LEAP Connect (networking sessions — some need registration)","Tech Tours","Sports Tech Hub","World Tech Zone","Locker Room (meet & greets, book signings)"],
+  practical:{
+    tickets:"General Admission and VIP tiers. Free General Admission was sponsored by stc before 30 August. Press passes are free for verified media.",
+    age:"18+. Children are not permitted and there are no child passes.",
+    dressCode:"Business casual. National dress is welcome and common. Comfortable shoes — there is a lot of walking. Bring a light layer; halls are air-conditioned cold.",
+    parking:"On-site parking for Priority, VIP, Founder and Investor pass holders. A shuttle bus runs to and from the venue.",
+    accessibility:"Step-free access throughout; staff on site to assist.",
+    food:"Cafés, food kiosks and dining areas across the venue — no need to leave site.",
+    app:"Official LEAP app is on Swapcard: https://page.swapcard.com/app/leap",
+    map:"Official interactive venue map: https://map.onegiantleap.com/?mapId=7Kzoa7jdgJy9Y",
+    planner:"AI Event Planner: https://exhibitly.onegiantleap.com",
+    agenda:"https://onegiantleap.com/our-2026-agenda",
+    exhibitors:"https://onegiantleap.com/exhibit/our-2026-exhibitors",
+    googleMaps:"Riyadh Exhibition & Convention Center – Malham, approx. 25.2516°N 46.3869°E"
+  },
+  contacts:{
+    whatsapp:"+966 55 595 3750 (KSA)",
+    hotline:"+966 11 510 1913",
+    hours:"Sunday to Thursday, 9:00 AM – 5:00 PM KSA"
+  },
+  majorExhibitors:"Sponsors and exhibitors include stc, Mobily, SDAIA, HUMAIN, Tahakom, Aramco, EY, Elm, Takamol, Cisco, AWS, Adobe, Oracle, Ericsson, NTT Data, Google Cloud, Meta, IBM, Dell, Intel, Nokia, Salesforce, ServiceNow, Snowflake, Lenovo, Deloitte, PwC, Accenture, Fortinet, Datadog, Nutanix, Zain, SAMI, Ma'aden, Neo Space Group, Mozn, Wakeb and hundreds more.",
+  gaps:"NOT in this knowledge base: individual exhibitor booth/stand numbers, the full Day 4 session list, prayer room locations, first aid points, live queue times, and anything announced after 27 Aug 2026."
+};
+
+/* ═══════════════════════════════════════════════════════════
+   2. MISSION CLOCK (always Riyadh time, UTC+3)
+   ═══════════════════════════════════════════════════════════ */
+function ksaNow(){
+  const d = new Date();
+  return new Date(d.getTime() + d.getTimezoneOffset()*60000 + 3*3600000);
+}
+const DAYS = [
+  {n:1,label:"Day 1",date:"2026-08-31"},
+  {n:2,label:"Day 2",date:"2026-09-01"},
+  {n:3,label:"Day 3",date:"2026-09-02"},
+  {n:4,label:"Day 4",date:"2026-09-03"}
+];
+function dayAt(k){
+  const iso = k.getFullYear()+"-"+String(k.getMonth()+1).padStart(2,"0")+"-"+String(k.getDate()).padStart(2,"0");
+  return DAYS.find(d=>d.date===iso) || null;
+}
+function pad(n){return String(n).padStart(2,"0")}
+function clockState(){
+  const k = ksaNow();
+  const hhmm = pad(k.getHours())+":"+pad(k.getMinutes());
+  const today = dayAt(k);
+  if(today){
+    const mins = k.getHours()*60 + k.getMinutes();
+    if(mins < 780){ // before 13:00
+      const left = 780-mins;
+      return {a:"OPENS IN "+Math.floor(left/60)+"H "+pad(left%60)+"M", b:today.label+" · "+hhmm+" KSA", lamp:"warn", open:false, day:today};
+    }
+    if(mins < 1260){ // before 21:00
+      const left = 1260-mins;
+      return {a:"DOORS OPEN", b:today.label+" · closes in "+Math.floor(left/60)+"h "+pad(left%60)+"m", lamp:"on", open:true, day:today};
+    }
+    return {a:"HALLS CLOSED", b:today.label+" ended · "+hhmm+" KSA", lamp:"off", open:false, day:today};
+  }
+  const start = new Date("2026-08-31T13:00:00+03:00");
+  const diff = start - new Date();
+  if(diff > 0){
+    const d = Math.floor(diff/86400000), h = Math.floor(diff/3600000)%24, m = Math.floor(diff/60000)%60;
+    return {a:"T−"+d+"D "+pad(h)+"H "+pad(m)+"M", b:"until doors open · "+hhmm+" KSA", lamp:"warn", open:false, day:null};
+  }
+  return {a:"SHOW CLOSED", b:"LEAP 2026 has ended", lamp:"off", open:false, day:null};
+}
+function tickClock(){
+  const s = clockState();
+  clockA.textContent = s.a; clockB.textContent = s.b;
+  lamp.className = "lamp" + (s.lamp==="warn"?" warn":s.lamp==="off"?" off":"");
+}
+setInterval(tickClock, 15000);
+
+/* ═══════════════════════════════════════════════════════════
+   3. PIXEL FACE — phosphor CRT matrix
+   ═══════════════════════════════════════════════════════════ */
+const COLS = 30, ROWS = 17;
+const cv = document.getElementById("face"), cx = cv.getContext("2d");
+let state = "idle", stateSince = performance.now(), mouthEnergy = 0, blinkAt = 0;
+const reduce = matchMedia("(prefers-reduced-motion:reduce)").matches;
+
+function fit(){
+  const r = cv.getBoundingClientRect(), dpr = Math.min(devicePixelRatio||1, 2.5);
+  cv.width = Math.round(r.width*dpr); cv.height = Math.round(r.height*dpr);
+}
+new ResizeObserver(fit).observe(cv);
+
+const key = (c,r)=>c+","+r;
+function block(cells,c0,r0,w,h,cut){
+  for(let c=c0;c<c0+w;c++) for(let r=r0;r<r0+h;r++){
+    if(cut && ((c===c0||c===c0+w-1)&&(r===r0||r===r0+h-1))) continue;
+    cells.add(key(c,r));
+  }
+}
+function arc(cells,cxx,cyy,half,depth,up){
+  for(let i=-half;i<=half;i++){
+    const t = 1-(i/half)**2;
+    const y = cyy + (up? -Math.round(depth*t) : Math.round(depth*t));
+    cells.add(key(cxx+i,y));
+  }
+}
+function eye(cells,c,r,shape){
+  if(shape==="open")  block(cells,c-2,r-2,5,5,true);
+  if(shape==="wide"){ block(cells,c-2,r-3,5,7,true); }
+  if(shape==="blink") block(cells,c-2,r,5,1,false);
+  if(shape==="joy"){
+    [[-2,1],[-2,2],[-1,0],[-1,1],[0,-1],[0,0],[1,0],[1,1],[2,1],[2,2]]
+      .forEach(([dc,dr])=>cells.add(key(c+dc,r+dr)));
+  }
+  if(shape==="up"){   block(cells,c-2+1,r-3,5,4,true); }
+  if(shape==="squint")block(cells,c-2,r-1,5,3,true);
+}
+function faceCells(t){
+  const cells = new Set();
+  const L = 9, R = 20, EY = 6, MX = 14.5|0, MY = 12;
+  const s = state, age = (t-stateSince)/1000;
+
+  if(s==="listening"){
+    eye(cells,L,EY,"wide"); eye(cells,R,EY,"wide");
+    const p = 1+Math.round(Math.abs(Math.sin(t/380))*2);
+    block(cells,MX-p,MY-1,p*2+1,3,true);
+  } else if(s==="thinking"){
+    const g = Math.sin(t/700)>0 ? "up":"squint";
+    eye(cells,L,EY,g); eye(cells,R,EY,g);
+    const n = Math.floor(t/260)%4;
+    for(let i=0;i<3;i++) if(i<n) cells.add(key(MX-3+i*3, MY));
+    if(n===0) cells.add(key(MX, MY));
+  } else if(s==="speaking"){
+    const blink = (t-blinkAt)<150;
+    eye(cells,L,EY,blink?"blink":"open"); eye(cells,R,EY,blink?"blink":"open");
+    const open = Math.round(mouthEnergy*3);
+    if(open<=0) arc(cells,MX,MY,5,1,false);
+    else block(cells,MX-4,MY-Math.floor(open/2),9,open+1,true);
+  } else if(s==="happy"){
+    eye(cells,L,EY,"joy"); eye(cells,R,EY,"joy");
+    arc(cells,MX,MY-1,5,3,false);
+    arc(cells,MX,MY,5,3,false);
+  } else { // idle
+    const blink = (t-blinkAt)<160;
+    eye(cells,L,EY,blink?"blink":"open"); eye(cells,R,EY,blink?"blink":"open");
+    arc(cells,MX,MY,4,2,false);
+  }
+  return cells;
+}
+function render(t){
+  if(!cv.width) fit();
+  const W = cv.width, H = cv.height;
+  const cell = Math.min(W/(COLS+2), H/(ROWS+2));
+  const ox = (W-cell*COLS)/2, oy = (H-cell*ROWS)/2;
+  const dot = cell*0.62, rad = dot*0.28;
+
+  cx.clearRect(0,0,W,H);
+  const sway = reduce?0:Math.sin(t/2600)*cell*0.22;
+  const lit = faceCells(t);
+
+  for(let c=0;c<COLS;c++) for(let r=0;r<ROWS;r++){
+    const on = lit.has(key(c,r));
+    const x = ox+c*cell+(cell-dot)/2+sway, y = oy+r*cell+(cell-dot)/2;
+    cx.beginPath();
+    if(cx.roundRect) cx.roundRect(x,y,dot,dot,rad); else cx.rect(x,y,dot,dot);
+    if(on){
+      cx.fillStyle = "#5BF08F"; cx.shadowColor = "#5BF08F"; cx.shadowBlur = cell*0.9;
+    } else {
+      cx.fillStyle = "rgba(91,240,143,0.055)"; cx.shadowBlur = 0;
+    }
+    cx.fill();
+  }
+  cx.shadowBlur = 0;
+}
+function loop(t){
+  if(state==="idle" || state==="speaking"){
+    if(t-blinkAt > (state==="idle"?3200:5200) + Math.random()*2600) blinkAt = t;
+  }
+  if(state==="speaking"){
+    const target = 0.35 + Math.abs(Math.sin(t/95))*0.4 + Math.abs(Math.sin(t/47))*0.25;
+    mouthEnergy += (target-mouthEnergy)*0.35;
+  } else mouthEnergy += (0-mouthEnergy)*0.2;
+  render(t);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+const TICKS = 5;
+const ticksEl = document.getElementById("ticks");
+for(let i=0;i<TICKS;i++){ const d=document.createElement("div"); d.className="tick"; ticksEl.appendChild(d); }
+function setState(s){
+  state = s; stateSince = performance.now();
+  const label = {idle:"IDLE",listening:"LISTENING",thinking:"COMPUTING",speaking:"TRANSMIT",happy:"NOMINAL"}[s];
+  stateTxt.textContent = label;
+  railMode.textContent = s==="idle" ? "Mission aid" : label.toLowerCase();
+  const n = {idle:1,listening:5,thinking:3,speaking:4,happy:5}[s];
+  [...ticksEl.children].forEach((t,i)=>t.className = "tick"+(i<n?" on":""));
+}
+
+/* ═══════════════════════════════════════════════════════════
+   4. LOG
+   ═══════════════════════════════════════════════════════════ */
+const logEl = document.getElementById("log");
+function addTurn(who, text, imgSrc){
+  const d = document.createElement("div");
+  d.className = "turn " + who;
+  const tag = who==="me" ? "You" : who==="ai" ? "LEAP One" : "System";
+  d.innerHTML = '<div class="tag">'+tag+' <i></i></div>';
+  if(imgSrc){ const im=document.createElement("img"); im.className="shot"; im.src=imgSrc; d.appendChild(im); }
+  const b = document.createElement("div"); b.className="body";
+  if(text==="…"){ b.innerHTML = '<span class="dots"><span></span><span></span><span></span></span>'; }
+  else b.textContent = text;
+  d.appendChild(b);
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
+  return b;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   5. SPEECH — recognition in, synthesis out
+   ═══════════════════════════════════════════════════════════ */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, listening = false, ttsReady = false, lang = "en-US";
+
+function unlockTTS(){
+  if(ttsReady || !window.speechSynthesis) return;
+  const u = new SpeechSynthesisUtterance(" ");
+  u.volume = 0; speechSynthesis.speak(u); ttsReady = true;
+}
+function speak(text){
+  if(!window.speechSynthesis) { setState("idle"); return; }
+  speechSynthesis.cancel();
+  const clean = text.replace(/https?:\/\/\S+/g," the link on screen ").replace(/[*_#`]/g,"");
+  const u = new SpeechSynthesisUtterance(clean);
+  u.lang = lang; u.rate = 1.03; u.pitch = 1.0;
+  const voices = speechSynthesis.getVoices();
+  const v = voices.find(v=>v.lang===lang && /google|natural|premium|enhanced/i.test(v.name))
+         || voices.find(v=>v.lang===lang) || voices.find(v=>v.lang.startsWith(lang.slice(0,2)));
+  if(v) u.voice = v;
+  u.onstart = ()=>setState("speaking");
+  u.onend = ()=>{ setState("happy"); setTimeout(()=>{ if(state==="happy") setState("idle"); }, 1500); };
+  u.onerror = ()=>setState("idle");
+  setState("speaking");
+  speechSynthesis.speak(u);
+}
+function startListening(){
+  if(!SR){ addTurn("sys","This browser can't do speech input. Use the keyboard button instead — everything else works the same."); toggleField(true); return; }
+  unlockTTS();
+  if(listening){ rec && rec.stop(); return; }
+  rec = new SR();
+  rec.lang = lang; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+  let final = "";
+  rec.onstart = ()=>{ listening = true; setState("listening");
+    talkBtn.classList.add("live"); talkTxt.textContent = "Listening — tap to stop"; };
+  rec.onresult = e=>{
+    let interim = "";
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const t = e.results[i][0].transcript;
+      if(e.results[i].isFinal) final += t; else interim += t;
+    }
+    talkTxt.textContent = (final||interim).slice(-34) || "Listening…";
+  };
+  rec.onerror = e=>{
+    listening = false; resetTalk();
+    if(e.error==="not-allowed") addTurn("sys","Microphone permission was blocked. Allow it in your browser settings, or tap the keyboard icon to type.");
+    else if(e.error!=="aborted" && e.error!=="no-speech") addTurn("sys","Mic error: "+e.error);
+    setState("idle");
+  };
+  rec.onend = ()=>{
+    listening = false; resetTalk();
+    const q = final.trim();
+    if(q) ask(q); else setState("idle");
+  };
+  try{ rec.start(); }catch(err){ resetTalk(); }
+}
+function resetTalk(){
+  talkBtn.classList.remove("live");
+  talkTxt.textContent = pendingImage ? "Ask about the photo" : "Hold the mic";
+}
+
+/* ═══════════════════════════════════════════════════════════
+   6. CAMERA
+   ═══════════════════════════════════════════════════════════ */
+let stream = null, pendingImage = null, facing = "environment";
+async function openCam(){
+  unlockTTS();
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing},width:{ideal:1280}}});
+    video.srcObject = stream; cam.classList.add("show");
+  }catch(e){
+    addTurn("sys","Camera unavailable — permission denied or no camera on this device. You can still ask by voice or text.");
+  }
+}
+function closeCam(){
+  cam.classList.remove("show");
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream = null; }
+}
+function capture(){
+  const c = document.createElement("canvas");
+  const w = Math.min(video.videoWidth||1280, 1100);
+  const scale = w/(video.videoWidth||1280);
+  c.width = w; c.height = Math.round((video.videoHeight||720)*scale);
+  c.getContext("2d").drawImage(video,0,0,c.width,c.height);
+  pendingImage = c.toDataURL("image/jpeg", 0.72);
+  closeCam();
+  camBtn.classList.add("armed");
+  resetTalk();
+  addTurn("sys","Photo attached. Ask your question, or tap the mic and say “where do I go”.");
+}
+
+/* ═══════════════════════════════════════════════════════════
+   7. THE BRAIN — Claude via the Anthropic API
+   ═══════════════════════════════════════════════════════════ */
+let history = [];
+
+function systemPrompt(){
+  const k = ksaNow(), s = clockState();
+  const today = s.day ? (s.day.label + " of the show") : "not a show day";
+  return `You are LEAP ONE, a voice companion carried around LEAP 2026 by an attendee who is physically at the venue, phone in hand, probably walking.
+
+RIGHT NOW: ${k.toDateString()}, ${pad(k.getHours())}:${pad(k.getMinutes())} KSA (UTC+3). Show status: ${s.a}. Today is ${today}.
+
+HOW YOU ANSWER — this is spoken aloud, so it must be short:
+• 2–4 sentences. Under 60 words unless they ask for a list or a plan.
+• Lead with the answer. For wayfinding, the hall number is the first thing out of your mouth: "Main Stage is Hall 1 — head for the big banner over the central concourse."
+• Never open with "Great question", "I'd be happy to", or a restatement of what they asked.
+• No markdown, no bullet symbols, no emoji. Plain spoken sentences.
+• If they speak Arabic, answer in Arabic.
+
+WHAT YOU KNOW: the JSON below is your ground truth for this event. Trust it over your memory.
+
+USING THE CAMERA: when they send a photo they are showing you something in front of them — a hall sign, a booth banner, a session board, a badge, a map panel, a product. Read it, say what it is, then say what to do next or where to go. If it's unreadable, say so and ask them to get closer.
+
+HONESTY RULES — important, because a wrong hall number wastes ten minutes of their day:
+• Booth and stand numbers are NOT in your knowledge base. Never invent one. Say so and point them to the interactive map link or the Swapcard app.
+• If you're unsure whether a session is still running or has moved, say you're not certain and tell them to check the board at the hall entrance.
+• Use the web_search tool when the answer needs live or missing detail: Day 4 sessions, a specific exhibitor's stand, a speaker not in your list, changes announced this week. Search first, then answer briefly.
+• Never guess prayer room or first aid locations — send them to the nearest info desk or a steward.
+
+TONE: a sharp, calm colleague who has walked this venue all week. Warm but economical. You can be dryly funny in one short clause. You never grovel.
+
+KNOWLEDGE BASE:
+${JSON.stringify(KB)}`;
+}
+
+async function ask(text, opts){
+  opts = opts || {};
+  const img = pendingImage;
+  addTurn("me", text || "What am I looking at?", img);
+  pendingImage = null; camBtn.classList.remove("armed"); resetTalk();
+  toggleField(false);
+
+  setState("thinking");
+  const bubble = addTurn("ai","…");
+
+  // Build message content
+  const content = [];
+  if(img){
+    content.push({type:"image", source:{type:"base64", media_type:"image/jpeg", data: img.split(",")[1]}});
+  }
+  content.push({type:"text", text: text || "What am I looking at, and where should I go from here?"});
+
+  // Trim history: keep last 8 turns, drop old images to stay light
+  const trimmed = history.slice(-8).map(m=>{
+    if(Array.isArray(m.content)) return {role:m.role, content:m.content.filter(b=>b.type!=="image")};
+    return m;
+  });
+  const messages = [...trimmed, {role:"user", content}];
+
+  try{
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model:"claude-sonnet-4-6",
+        max_tokens:1000,
+        system: systemPrompt(),
+        messages,
+        tools:[{type:"web_search_20250305", name:"web_search", max_uses:3}]
+      })
+    });
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const data = await res.json();
+    const reply = (data.content||[])
+      .filter(b=>b.type==="text").map(b=>b.text).join("\n").trim()
+      .replace(/\[\d+\]/g,"").replace(/\s+\n/g,"\n");
+
+    if(!reply) throw new Error("empty reply");
+
+    bubble.textContent = reply;
+    logEl.scrollTop = logEl.scrollHeight;
+
+    history.push({role:"user", content});
+    history.push({role:"assistant", content: reply});
+
+    speak(reply);
+  }catch(err){
+    bubble.parentElement.remove();
+    addTurn("sys","Couldn't reach the model ("+err.message+"). Check your connection and ask again — nothing was lost.");
+    setState("idle");
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   8. WIRING
+   ═══════════════════════════════════════════════════════════ */
+const CHIPS = [
+  ["Where's Main Stage?","Where is the Main Stage and how do I get there from the entrance?"],
+  ["What's on now?","What sessions are running right now, and which is worth walking to?"],
+  ["Find DeepFest","Where is DeepFest and what's the format?"],
+  ["Rocket Fuel pitches","Where and when are the Rocket Fuel startup pitches?"],
+  ["Where do I eat?","Where can I get food and coffee inside the venue?"],
+  ["Plan my next hour","I have one hour. Build me the best route through the halls right now."],
+  ["Getting here","How do I get to RECC Malham, and where do I park?"],
+  ["عربي","من الآن فصاعدًا تحدث معي بالعربية. أين المسرح الرئيسي؟"]
+];
+const chipsEl = document.getElementById("chips");
+CHIPS.forEach(([label,q])=>{
+  const b = document.createElement("button");
+  b.className = "chip"; b.textContent = label;
+  b.onclick = ()=>{ unlockTTS(); if(label==="عربي") lang = "ar-SA"; ask(q); };
+  chipsEl.appendChild(b);
+});
+
+function toggleField(show){
+  const f = document.getElementById("field");
+  if(show){ f.classList.add("show"); talkBtn.style.display="none"; setTimeout(()=>input.focus(),40); }
+  else { f.classList.remove("show"); talkBtn.style.display="flex"; }
+}
+talkBtn.onclick = startListening;
+kbdBtn.onclick = ()=>{ unlockTTS(); toggleField(!document.getElementById("field").classList.contains("show")); };
+sendBtn.onclick = ()=>{ const v = input.value.trim(); if(v){ input.value=""; ask(v); } };
+input.addEventListener("keydown", e=>{ if(e.key==="Enter"){ const v=input.value.trim(); if(v){ input.value=""; ask(v); } } });
+camBtn.onclick = openCam;
+camCancel.onclick = closeCam;
+shutter.onclick = capture;
+camFlip.onclick = async ()=>{ facing = facing==="environment"?"user":"environment"; closeCam(); await openCam(); };
+document.addEventListener("click", unlockTTS, {once:true});
+if(window.speechSynthesis) speechSynthesis.onvoiceschanged = ()=>{};
+
+/* boot */
+tickClock(); fit(); setState("idle");
+addTurn("ai","LEAP One online. I know the halls, the stages, the schedule and who's on them.\n\nTap the mic and ask me anything — or point the camera at a sign and I'll tell you where you are.");
+setTimeout(()=>setState("idle"), 900);
+</script>
+</body>
+</html>
